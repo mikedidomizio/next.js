@@ -26,6 +26,7 @@ export async function loadStaticPaths({
   pathname,
   config,
   httpAgentOptions,
+  enableUndici,
   locales,
   defaultLocale,
   isAppPath,
@@ -40,6 +41,7 @@ export async function loadStaticPaths({
   pathname: string
   config: RuntimeConfig
   httpAgentOptions: NextConfigComplete['httpAgentOptions']
+  enableUndici: NextConfigComplete['enableUndici']
   locales?: string[]
   defaultLocale?: string
   isAppPath?: boolean
@@ -58,6 +60,7 @@ export async function loadStaticPaths({
   require('../../shared/lib/runtime-config').setConfig(config)
   setHttpClientAndAgentOptions({
     httpAgentOptions,
+    experimental: { enableUndici },
   })
 
   const components = await loadComponents({

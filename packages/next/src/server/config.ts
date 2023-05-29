@@ -19,10 +19,16 @@ import {
 import { loadWebpackHook } from './config-utils'
 import { ImageConfig, imageConfigDefault } from '../shared/lib/image-config'
 import { loadEnvConfig, updateInitialEnv } from '@next/env'
+import { gte as semverGte } from 'next/dist/compiled/semver'
 import { flushAndExit } from '../telemetry/flush-and-exit'
 import { findRootDir } from '../lib/find-root'
 
 export { DomainLocale, NextConfig, normalizeConfig } from './config-shared'
+
+const NODE_16_VERSION = '16.8.0'
+const NODE_18_VERSION = '18.0.0'
+const isAboveNodejs16 = semverGte(process.version, NODE_16_VERSION)
+const isAboveNodejs18 = semverGte(process.version, NODE_18_VERSION)
 
 const experimentalWarning = execOnce(
   (configFileName: string, features: string[]) => {
@@ -43,9 +49,26 @@ const experimentalWarning = execOnce(
   }
 )
 
-export function setHttpClientAndAgentOptions(config: {
-  httpAgentOptions?: NextConfig['httpAgentOptions']
-}) {
+export function setHttpClientAndAgentOptions(
+  config: {
+    httpAgentOptions?: NextConfig['httpAgentOptions']
+    experimental?: {
+      enableUndici?: boolean
+    }
+  },
+  silent = false
+) {
+  if (isAboveNodejs16) {
+    // Node.js 18 has undici built-in.
+    if (config.experimental?.enableUndici && !isAboveNodejs18) {
+      // When appDir is enabled undici is the default because of Response.clone() issues in node-fetch
+      ;(globalThis as any).__NEXT_USE_UNDICI = config.experimental?.enableUndici
+    }
+  } else if (config.experimental?.enableUndici && !silent) {
+    Log.warn(
+      `\`enableUndici\` option requires Node.js v${NODE_16_VERSION} or greater. Falling back to \`node-fetch\``
+    )
+  }
   if ((globalThis as any).__NEXT_HTTP_AGENT) {
     // We only need to assign once because we want
     // to reuse the same agent for all requests.
@@ -261,6 +284,10 @@ function assignDefaults(
     Log.warn(
       `\`outputFileTracingIgnores\` has been moved to \`experimental.outputFileTracingExcludes\`. Please update your ${configFileName} file accordingly.`
     )
+  }
+
+  if (result.experimental?.appDir) {
+    result.experimental.enableUndici = true
   }
 
   if (result.basePath !== '') {
@@ -485,7 +512,7 @@ function assignDefaults(
     result.output = undefined
   }
 
-  setHttpClientAndAgentOptions(result || defaultConfig)
+  setHttpClientAndAgentOptions(result || defaultConfig, silent)
 
   if (result.i18n) {
     const { i18n } = result
@@ -832,6 +859,6 @@ export default async function loadConfig(
     silent
   ) as NextConfigComplete
   completeConfig.configFileName = configFileName
-  setHttpClientAndAgentOptions(completeConfig)
+  setHttpClientAndAgentOptions(completeConfig, silent)
   return completeConfig
 }
