@@ -1263,6 +1263,7 @@ export default async function build(
               configFileName,
               runtimeEnvConfig,
               httpAgentOptions: config.httpAgentOptions,
+              enableUndici: config.experimental.enableUndici,
               locales: config.i18n?.locales,
               defaultLocale: config.i18n?.defaultLocale,
               nextConfigOutput: config.output,

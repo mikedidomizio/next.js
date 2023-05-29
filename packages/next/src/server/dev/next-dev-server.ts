@@ -1650,6 +1650,7 @@ export default class DevServer extends Server {
         publicRuntimeConfig,
         serverRuntimeConfig,
         httpAgentOptions,
+        experimental: { enableUndici },
       } = this.nextConfig
       const { locales, defaultLocale } = this.nextConfig.i18n || {}
       const staticPathsWorker = this.getStaticPathsWorker()
@@ -1664,6 +1665,7 @@ export default class DevServer extends Server {
             serverRuntimeConfig,
           },
           httpAgentOptions,
+          enableUndici,
           locales,
           defaultLocale,
           originalAppPath,

@@ -1,13 +1,7 @@
 import retry from 'next/dist/compiled/async-retry'
-const { fetch } = require('next/dist/compiled/undici') as {
-  fetch: typeof global.fetch
-}
+import fetch from 'next/dist/compiled/node-fetch'
 
 export function _postPayload(endpoint: string, body: object, signal?: any) {
-  if (!signal && 'timeout' in AbortSignal) {
-    // @ts-expect-error Needs @types/node@16.14.0 or newer
-    signal = AbortSignal.timeout(5000)
-  }
   return (
     retry(
       () =>
@@ -15,6 +9,7 @@ export function _postPayload(endpoint: string, body: object, signal?: any) {
           method: 'POST',
           body: JSON.stringify(body),
           headers: { 'content-type': 'application/json' },
+          timeout: 5000,
           signal,
         }).then((res) => {
           if (!res.ok) {
